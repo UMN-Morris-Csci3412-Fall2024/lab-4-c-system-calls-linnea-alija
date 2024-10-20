@@ -26,7 +26,7 @@ jobs:
       # does the necessary thing. If that's not true, you might need
       # modify this accordingly.
       run: gcc -Wall -o file_disemvowel *.c
-      working-directory: ./file_disemvowel
+      working-directory: ./file_disemvowel_dir
     - name: Run the file disemvowel tests
       run: bats tests/file_disemvowel_test.bats
-      working-directory: ./file_disemvowel
+      working-directory: ./file_disemvowel_dir
