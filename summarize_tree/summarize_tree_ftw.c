@@ -1,20 +1,49 @@
 #include <stdio.h>
-#include <ftw.h>
+#include <sys/stat.h>
 #include <stdbool.h>
+#include <stdlib.h>
+#include <dirent.h>
+#include <string.h>
 
-static int num_dirs = 0;
-static int num_regular = 0;
+#define MAX_PATH_LEN 4096
 
-// Callback function for ftw()
-static int callback(const char *fpath, const struct stat *sb, int typeflag) {
-    if (typeflag == FTW_D) {
-        // Increment directory count if it's a directory
-        num_dirs++;
-    } else if (typeflag == FTW_F) {
-        // Increment regular file count if it's a file
-        num_regular++;
+static int num_dirs = 0, num_regular = 0;
+
+bool is_dir(const char* path) {
+    struct stat buf;
+    if (stat(path, &buf) != 0) {
+        perror("stat");
+        return false;
     }
-    return 0; // Continue the traversal
+    return S_ISDIR(buf.st_mode);
+}
+
+void process_directory(const char* path) {
+    DIR* dir = opendir(path);
+    struct dirent* entry;
+
+    if (!dir) {
+        perror("opendir");
+        return;
+    }
+
+    num_dirs++;  // Count the directory
+
+    while ((entry = readdir(dir)) != NULL) {
+        if (strcmp(entry->d_name, ".") == 0 || strcmp(entry->d_name, "..") == 0) {
+            continue;
+        }
+
+        char full_path[MAX_PATH_LEN];
+        snprintf(full_path, sizeof(full_path), "%s/%s", path, entry->d_name);
+
+        if (is_dir(full_path)) {
+            process_directory(full_path);
+        } else {
+            num_regular++;
+        }
+    }
+    closedir(dir);
 }
 
 int main(int argc, char *argv[]) {
@@ -23,13 +52,16 @@ int main(int argc, char *argv[]) {
         return 1;
     }
 
-    // Use ftw() to traverse the file tree
-    if (ftw(argv[1], callback, 16) == -1) {
-        perror("ftw");
+    if (!is_dir(argv[1])) {
+        printf("Error: %s is not a directory.\n", argv[1]);
         return 1;
     }
 
-    // Print results
+    num_dirs = -1;  // Exclude the base directory
+    num_regular = 0;
+
+    process_directory(argv[1]);
+
     printf("There were %d directories.\n", num_dirs);
     printf("There were %d regular files.\n", num_regular);
 
