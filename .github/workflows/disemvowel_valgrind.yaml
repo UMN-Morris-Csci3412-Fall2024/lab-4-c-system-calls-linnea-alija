@@ -28,7 +28,7 @@ jobs:
       # does the necessary thing. If that's not true, you might need
       # modify this accordingly.
       run: gcc -Wall -o file_disemvowel *.c
-      working-directory: ./file_disemvowel
+      working-directory: ./file_disemvowel_dir
     - name: Run a valgrind test
       run: valgrind --leak-check=full --show-leak-kinds=all --error-exitcode=1 ./file_disemvowel < tests/as_you_like_it.txt > /tmp/as_you_like_it.output
-      working-directory: ./file_disemvowel
+      working-directory: ./file_disemvowel_dir
