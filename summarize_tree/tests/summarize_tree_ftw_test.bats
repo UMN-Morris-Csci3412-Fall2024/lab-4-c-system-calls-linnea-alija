@@ -21,27 +21,6 @@ teardown() {
     [ "$status" -eq 0 ]
 }
 
-@test "summarize_tree.sh works with small directory structure - test 1" {
-    run ./summarize_tree.sh test_data/fewer_files
-    [ "$status" -eq 0 ]
-    [[ "$output" == *"There were 10 directories."* ]]
-    [[ "$output" == *"There were 100 regular files."* ]]
-}
-
-@test "summarize_tree.sh works with large directory structure - test 2" {
-    run ./summarize_tree.sh test_data/loads_o_files
-    [ "$status" -eq 0 ]
-    [[ "$output" == *"There were 1111 directories."* ]]
-    [[ "$output" == *"There were 10001 regular files."* ]]
-}
-
-@test "summarize_tree works with large directory structure" {
-    run ./summarize_tree test_data/loads_o_files
-    [ "$status" -eq 0 ]
-    [[ "$output" == *"There were 1111 directories."* ]]
-    [[ "$output" == *"There were 10001 regular files."* ]]
-}
-
 @test "summarize_tree_ftw exists" {
     [ -f "summarize_tree_ftw" ]
 }
