@@ -3,71 +3,103 @@
 #include <stdbool.h>
 #include <stdlib.h>
 #include <dirent.h>
-#include <unistd.h>
 #include <string.h>
+
+#define MAX_PATH_LEN 4096  // Increased max path length for safety
 
 static int num_dirs, num_regular;
 
+// Function prototypes
+bool is_dir(const char* path);
+void process_directory(const char* path);
+void process_file(const char* path);
+void process_path(const char* path);
+
+// Function to check if a path is a directory
 bool is_dir(const char* path) {
-  /*
-   * Use the stat() function (try "man 2 stat") to determine if the file
-   * referenced by path is a directory or not.  Call stat, and then use
-   * S_ISDIR to see if the file is a directory. Make sure you check the
-   * return value from stat() in case there is a problem, e.g., maybe the
-   * the file doesn't actually exist.
-   */
+    struct stat buf;
+    // Use stat() to get information about the file
+    if (stat(path, &buf) != 0) {
+        perror("stat");
+        return false;
+    }
+    // Check if the file is a directory
+    return S_ISDIR(buf.st_mode);
 }
 
-/* 
- * I needed this because the multiple recursion means there's no way to
- * order them so that the definitions all precede the cause.
- */
-void process_path(const char*);
-
+// Function to process directories recursively
 void process_directory(const char* path) {
-  /*
-   * Update the number of directories seen, use opendir() to open the
-   * directory, and then use readdir() to loop through the entries
-   * and process them. You have to be careful not to process the
-   * "." and ".." directory entries, or you'll end up spinning in
-   * (infinite) loops. Also make sure you closedir() when you're done.
-   *
-   * You'll also want to use chdir() to move into this new directory,
-   * with a matching call to chdir() to move back out of it when you're
-   * done.
-   */
+    DIR* dir = opendir(path);
+    struct dirent* entry;
+
+    if (!dir) {
+        perror("opendir");
+        return;
+    }
+
+    // Update the number of directories seen
+    num_dirs++;
+
+    // Loop through directory entries
+    while ((entry = readdir(dir)) != NULL) {
+        // Skip the "." and ".." entries to avoid infinite loops
+        if (strcmp(entry->d_name, ".") == 0 || strcmp(entry->d_name, "..") == 0) {
+            continue;
+        }
+
+        // Construct the full path for the current entry
+        char full_path[MAX_PATH_LEN];
+        snprintf(full_path, sizeof(full_path), "%s/%s", path, entry->d_name);
+
+        // Process the entry's path
+        process_path(full_path);
+    }
+
+    closedir(dir);
 }
 
+// Function to process regular files
 void process_file(const char* path) {
-  /*
-   * Update the number of regular files.
-   * This is as simple as it seems. :-)
-   */
+    // Update the number of regular files
+    num_regular++;
 }
 
+// Function to process paths (recursively called for directories)
 void process_path(const char* path) {
-  if (is_dir(path)) {
-    process_directory(path);
-  } else {
-    process_file(path);
-  }
+    // Check if the path is a directory or file
+    if (is_dir(path)) {
+        process_directory(path);
+    } else {
+        process_file(path);
+    }
 }
 
-int main (int argc, char *argv[]) {
-  // Ensure an argument was provided.
-  if (argc != 2) {
-    printf ("Usage: %s <path>\n", argv[0]);
-    printf ("       where <path> is the file or root of the tree you want to summarize.\n");
-    return 1;
-  }
+int main(int argc, char *argv[]) {
+    char abs_path[MAX_PATH_LEN];
 
-  num_dirs = 0;
-  num_regular = 0;
+    // Ensure an argument was provided
+    if (argc != 2) {
+        printf("Usage: %s <path>\n", argv[0]);
+        printf("       where <path> is the file or root of the tree you want to summarize.\n");
+        return 1;
+    }
 
-  process_path(argv[1]);
+    // Get the absolute path of the initial directory
+    if (realpath(argv[1], abs_path) == NULL) {
+        perror("realpath");
+        return 1;
+    }
 
-  printf("There were %d directories.\n", num_dirs);
-  printf("There were %d regular files.\n", num_regular);
+    // Initialize counters
+    num_dirs = 0;
+    num_regular = 0;
 
-  return 0;
+    // Start processing the specified path
+    process_path(abs_path);
+
+    // Print results
+    printf("There were %d directories.\n", num_dirs);
+    printf("There were %d regular files.\n", num_regular);
+
+    return 0;
 }
