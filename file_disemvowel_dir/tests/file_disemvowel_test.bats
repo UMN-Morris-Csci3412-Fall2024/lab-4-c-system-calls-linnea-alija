@@ -10,11 +10,11 @@ teardown() {
 
 # Tests for file_disemvowel in the main directory
 @test "file_disemvowel exists in main directory" {
-    [ -f "./file_disemvowel_dir/file_disemvowel" ]
+    [ -f "./file_disemvowel" ]
 }
 
 @test "file_disemvowel is executable in main directory" {
-    [ -x "./file_disemvowel_dir/file_disemvowel" ]
+    [ -x "./file_disemvowel" ]
 }
 
 @test "file_disemvowel runs successfully in main directory" {
